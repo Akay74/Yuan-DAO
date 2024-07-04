@@ -35,6 +35,7 @@ contract VotesCounter is IVotesCounter {
 
     /**
      * @dev See {Governor-_countVote}. In this module, the support follows the `VoteType` enum (from Governor Bravo).
+     * @dev weight here refers to how much governance token the voter wants to vote with
      */
     function _countVote(
         uint256 proposalId,
