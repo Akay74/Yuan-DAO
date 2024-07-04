@@ -70,11 +70,9 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
      * @param proposalId The unique identifier of the proposal.
      * @param option The option number.
      * @param winningToken The address of the winning token.
-     *
-     * Note: This function does not emit an event. Consider adding an event
-     * if tracking these changes on-chain is important for your use case.
      */
     function _setWinningToken(bytes32 proposalId, uint8 option, address winningToken) internal {
+        emit WinningTokenSet(proposalId, option, winningToken);
         _proposalWinner[proposalId][option] = winningToken;
     }
     
