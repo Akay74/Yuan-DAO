@@ -43,7 +43,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     // receive() external payable {}
 
     /**
-     * @dev See {IGovernor-hashProposal}.
+     * @dev See {IYuanDao-hashProposal}.
      *
      * The proposal id is produced by hashing the ABI encoded `targets` array, the `values` array, the `calldatas` array
      * and the descriptionHash (bytes32 which itself is the keccak256 hash of the description string). This proposal id
@@ -78,7 +78,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
-     * @dev See {IGovernor-propose}
+     * @dev See {IYuanDao-propose}
      */
     function propose(
         address[] memory targets,
@@ -91,7 +91,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
      /**
-     * @dev See {IGovernor-cancel}.
+     * @dev See {IYuanDao-cancel}.
      */
     function cancel(
         address[] memory targets,
@@ -109,7 +109,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
-     * @dev See {IGovernor-castVote}.
+     * @dev See {IYuanDao-castVote}.
      */
     function castVote(uint256 proposalId, uint8 support, uint256 weight) public returns (uint256) {
         address voter = _msgSender();
@@ -117,14 +117,14 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
-     * @dev See {IGovernor-name}.
+     * @dev See {IYuanDao-name}.
      */
     function name() public view returns (string memory) {
         return _name;
     }
 
     /**
-     * @dev See {IGovernor-state}.
+     * @dev See {IYuanDao-state}.
      */
     function state(uint256 proposalId) public view returns (ProposalState) {
         // We read the struct fields into the stack at once so Solidity emits a single SLOAD
@@ -160,21 +160,21 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
-     * @dev See {IGovernor-proposalStart}.
+     * @dev See {IYuanDao-proposalStart}.
      */
     function proposalStart(uint256 proposalId) public view returns (uint256) {
         return _proposals[proposalId].voteStart;
     }
 
     /**
-     * @dev See {IGovernor-proposalDeadline}.
+     * @dev See {IYuanDao-proposalDeadline}.
      */
     function proposalDeadline(uint256 proposalId) public view returns (uint256) {
         return _proposals[proposalId].voteStart + _proposals[proposalId].voteDuration;
     }
 
     /**
-     * @dev See {IGovernor-proposalProposer}.
+     * @dev See {IYuanDao-proposalProposer}.
      */
     function proposalProposer(uint256 proposalId) public view returns (address) {
         return _proposals[proposalId].proposer;
@@ -184,7 +184,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
      * @dev Internal cancel mechanism with minimal restrictions. A proposal can be cancelled in any state other than
      * Canceled, Expired, or Executed. Once cancelled a proposal can't be re-submitted.
      *
-     * Emits a {IGovernor-ProposalCanceled} event.
+     * Emits a {IYuanDao-ProposalCanceled} event.
      */
     function _cancel(
         address[] memory targets,
@@ -209,7 +209,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     /**
      * @dev Internal propose mechanism. Can be overridden to add more logic on proposal creation.
      *
-     * Emits a {IGovernor-ProposalCreated} event.
+     * Emits a {IYuanDao-ProposalCreated} event.
      */
     function _propose(
         address[] memory targets,
@@ -249,9 +249,9 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
 
     /**
      * @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet, retrieve
-     * voting weight using {IGovernor-getVotes} and call the {_countVote} internal function.
+     * voting weight using {IYuanDao-getVotes} and call the {_countVote} internal function.
      *
-     * Emits a {IGovernor-VoteCast} event.
+     * Emits a {IYuanDao-VoteCast} event.
      */
     function _castVote(
         uint256 proposalId,
