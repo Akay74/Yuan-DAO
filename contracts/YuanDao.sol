@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import { IYuanDao } from "./interfaces/IYuanDao.sol";
-import { DaoSettings, AccessControl } from "./Settings.sol";
+import { DaoSettings } from "./Settings.sol";
 import { VotesCounter } from "./VotesCounter.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
