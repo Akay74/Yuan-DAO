@@ -6,7 +6,7 @@ import { IVotesCounter } from "./interfaces/IVotesCounter.sol";
 
 contract VotesCounter is IVotesCounter {
     /**
-     * @dev Supported vote types. Matches Governor Bravo ordering.
+     * @dev Supported vote types.
      */
     enum VoteType {
         OptionA,
