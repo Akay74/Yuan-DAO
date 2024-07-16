@@ -253,12 +253,12 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
      *
      * Emits a {IYuanDao-VoteCast} event.
      */
-    function _castVote(
+     function _castVote(
         uint256 proposalId,
         address account,
         uint8 support,
         uint256 weight,
-        string memory reason
+        string memory reason 
     ) internal returns (uint256) {
         _validateStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Active));
 
@@ -275,8 +275,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
      *
      * 0x000...10000
      *   ^^^^^^------ ...
-     *         ^----- Succeeded
-     *          ^---- Defeated
+     *          ^---- Finalized
      *           ^--- Canceled
      *            ^-- Active
      *             ^- Pending
