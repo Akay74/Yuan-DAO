@@ -33,6 +33,27 @@ interface IDaoSettings {
   error GovernorInvalidVotingPeriod(uint256 votingPeriod);
 
   /**
+    * @dev Update the voting delay. This operation can only be performed by an admin.
+    * @param newVotingDelay the voting delay to set
+    * Emits a {VotingDelaySet} event.
+    */
+  function setVotingDelay(uint48 newVotingDelay) public onlyRole(ADMIN_ROLE) {}
+
+  /**
+    * @dev Update the voting period. This operation can only be performed by an admin.
+    * @param newVotingPeriod the voting period to set
+    * Emits a {VotingPeriodSet} event.
+    */
+  function setVotingPeriod(uint32 newVotingPeriod) public onlyRole(ADMIN_ROLE) {}
+
+  /**
+    * @dev Update the proposal threshold. This operation can only be performed by an admin.
+    * @param newProposalThreshold the new threshold to set
+    * Emits a {ProposalThresholdSet} event.
+    */
+  function setProposalThreshold(uint256 newProposalThreshold) public onlyRole(ADMIN_ROLE) {}
+
+  /**
    * @dev Returns the current voting delay.
    * @return The voting delay in seconds.
    */
