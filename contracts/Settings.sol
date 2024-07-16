@@ -5,20 +5,20 @@ import { IDaoSettings } from "./interfaces/ISettings.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * @dev Extension of {Governor} for settings updatable through governance.
+ * @dev Contract for settings updatable through governance.
  */
 contract DaoSettings is IDaoSettings, AccessControl {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     // amount of token
     uint256 private _proposalThreshold;
-    // timepoint: limited to uint48 in core (same as clock() type)
+    // timepoint
     uint48 private _votingDelay;
-    // duration: limited to uint32 in core
+    // duration
     uint32 private _votingPeriod;
 
     /**
-     * @dev Initialize the governance parameters.
+     * @dev Initialize the governance settings parameters.
      */
     constructor(uint48 initialVotingDelay, uint32 initialVotingPeriod, uint256 initialProposalThreshold)
     {
@@ -34,48 +34,42 @@ contract DaoSettings is IDaoSettings, AccessControl {
     }
 
     /**
-     * @dev Update the voting delay. This operation can only be performed by an admin.
-     *
-     * Emits a {VotingDelaySet} event.
+     * @dev See {IDaoSettings-setVotingDelay}.
      */
     function setVotingDelay(uint48 newVotingDelay) public onlyRole(ADMIN_ROLE) {
         _setVotingDelay(newVotingDelay);
     }
 
     /**
-     * @dev Update the voting period. This operation can only be performed by an admin.
-     *
-     * Emits a {VotingPeriodSet} event.
+     * @dev See {IDaoSettings-setVotingPeriod}.
      */
     function setVotingPeriod(uint32 newVotingPeriod) public onlyRole(ADMIN_ROLE) {
         _setVotingPeriod(newVotingPeriod);
     }
 
     /**
-     * @dev Update the proposal threshold. This operation can only be performed by an admin.
-     *
-     * Emits a {ProposalThresholdSet} event.
+     * @dev See {IDaoSettings-setProposalThreshold}.
      */
     function setProposalThreshold(uint256 newProposalThreshold) public onlyRole(ADMIN_ROLE) {
         _setProposalThreshold(newProposalThreshold);
     }
 
     /**
-     * @dev See {IGovernor-votingDelay}.
+     * @dev See {IDaoSettings-votingDelay}.
      */
     function votingDelay() public view returns (uint256) {
         return _votingDelay;
     }
 
     /**
-     * @dev See {IGovernor-votingPeriod}.
+     * @dev See {IDaoSettings-votingPeriod}.
      */
     function votingPeriod() public view returns (uint256) {
         return _votingPeriod;
     }
 
     /**
-     * @dev See {Governor-proposalThreshold}.
+     * @dev See {IDaoSettings-proposalThreshold}.
      */
     function proposalThreshold() public view returns (uint256) {
         return _proposalThreshold;
