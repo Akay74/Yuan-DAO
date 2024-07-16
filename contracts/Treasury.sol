@@ -13,7 +13,7 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
 
     address public governanceToken;
     
-    uint8 private _decimals = 8;
+    uint8 private _decimals = 8; //create a method to update the decimal in case the governance token is updated
 
     mapping(bytes32 => mapping(uint256 => address)) private _proposalWinner;
 
@@ -27,6 +27,14 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
      */
     function setWinningToken(bytes32 proposalId, uint8 option, address winningToken) external onlyOwner {
         _setWinningToken(proposalId, option, winningToken);
+    }
+
+    function burnGovernanceToken(uint256 amount) external onlyOwner {
+        _burn(amount);
+    }
+
+    function transferVoteToken(uint256 amount) external {
+        _transferVoteToken(amount);
     }
 
     /**
@@ -89,6 +97,7 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
         uint256 amountToBurn = amount * 10**_decimals;
         uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(address(this));
         require(governanceTokenBalance >= amountToBurn, "Insufficient funds");
+        emit TokenBurned(amount);
 
         IERC20(governanceToken).safeTransferFrom(address(this), address(0), amountToBurn);
     }
