@@ -12,6 +12,8 @@ interface ITreasury {
      */
     event WinningTokenSet(bytes32 proposalId, uint8 option, address winningToken);
 
+    event TokenBurned(uint256 amount);
+
     /**
      * @dev Sets the address of the winning token that will be distributed to voters.
      *      This function can only be called by the contract owner.
@@ -20,6 +22,10 @@ interface ITreasury {
      * @param winningToken The address of the winning token.
      */
     function setWinningToken(bytes32 proposalId, uint8 option, address winningToken) external;
+
+    function burnGovernanceToken(uint256 amount) external;
+
+    function transferVoteToken(uint256 amount) external;
 
     /**
      * @dev Returns the current balance of the winning token held by the contract.
