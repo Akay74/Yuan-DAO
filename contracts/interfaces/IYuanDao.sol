@@ -3,9 +3,13 @@
 pragma solidity ^0.8.17;
 
 /**
+ * @title IYuanDao
  * @dev Interface of the Yuan DAO.
  */
 interface IYuanDao {
+    /**
+     * @dev Enum representing the state of a proposal
+     */
     enum ProposalState {
         Pending,
         Active,
@@ -13,8 +17,15 @@ interface IYuanDao {
         Executed
     }
 
-        /**
+    /**
      * @dev Emitted when a proposal is created.
+     * @param proposalId Unique identifier of the proposal
+     * @param proposer Address of the account that created the proposal
+     * @param targets Array of addresses that the proposal calls
+     * @param values Array of eth values to be sent with the calls
+     * @param voteStart The start time of the voting period
+     * @param voteEnd The end time of the voting period
+     * @param description String description of the proposal
      */
     event ProposalCreated(
         uint256 proposalId,
@@ -28,29 +39,37 @@ interface IYuanDao {
 
     /**
      * @dev Emitted when a proposal is executed.
+     * @param proposalId Unique identifier of the executed proposal
      */
     event ProposalExecuted(uint256 proposalId);
 
     /**
      * @dev Emitted when a proposal is canceled.
+     * @param proposalId Unique identifier of the canceled proposal
      */
     event ProposalCanceled(uint256 proposalId);
 
     /**
      * @dev Emitted when a vote is cast without params.
-     *
-     * Note: `support` values should be seen as buckets. Their interpretation depends on the voting module used.
+     * @param voter Address of the account casting the vote
+     * @param proposalId Unique identifier of the proposal
+     * @param support The type of vote (for, against, abstain)
+     * @param weight The weight of the vote
+     * @param reason A string explaining the reason for the vote
+     * @notice `support` values should be seen as buckets. Their interpretation depends on the voting module used.
      */
     event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
 
-
     /**
      * @dev Empty proposal or a mismatch between the parameters length for a proposal call.
+     * @param targets Number of target addresses
+     * @param values Number of eth values
      */
-    error GovernorInvalidProposalLength(uint256 targets , uint256 values);
+    error GovernorInvalidProposalLength(uint256 targets, uint256 values);
 
     /**
      * @dev The vote was already cast.
+     * @param voter Address of the voter who already cast their vote
      */
     error GovernorAlreadyCastVote(address voter);
 
@@ -61,45 +80,54 @@ interface IYuanDao {
 
     /**
      * @dev The `account` is not a proposer.
+     * @param account Address of the account trying to perform a proposer-only action
      */
     error GovernorOnlyProposer(address account);
 
     /**
      * @dev The `proposalId` doesn't exist.
+     * @param proposalId Unique identifier of the non-existent proposal
      */
     error GovernorNonexistentProposal(uint256 proposalId);
     
     /**
      * @dev The proposer does not have rights to the method.
+     * @param sender Address of the unauthorized sender
      */
     error GovernorUnauthorizedProposer(address sender);
 
     /**
      * @dev The current state of a proposal is not the required for performing an operation.
-     * The `expectedStates` is a bitmap with the bits enabled for each ProposalState enum position
+     * @param proposalId Unique identifier of the proposal
+     * @param current Current state of the proposal
+     * @param expectedStates Bitmap of expected states
+     * @notice The `expectedStates` is a bitmap with the bits enabled for each ProposalState enum position
      * counting from right to left.
-     *
-     * NOTE: If `expectedState` is `bytes32(0)`, the proposal is expected to not be in any state (i.e. not exist).
+     * @notice If `expectedState` is `bytes32(0)`, the proposal is expected to not be in any state (i.e. not exist).
      * This is the case when a proposal that is expected to be unset is already initiated (the proposal is duplicated).
-     *
-     * See {Governor-_encodeStateBitmap}.
+     * @notice See {Governor-_encodeStateBitmap}.
      */
     error GovernorUnexpectedProposalState(uint256 proposalId, ProposalState current, bytes32 expectedStates);
 
     /**
      * @dev The `proposer` is not allowed to create a proposal.
+     * @param proposer Address of the restricted proposer
      */
     error GovernorRestrictedProposer(address proposer);
 
     /**
      * @dev The provided signature is not valid for the expected `voter`.
-     * If the `voter` is a contract, the signature is not valid using {IERC1271-isValidSignature}.
+     * @param voter Address of the voter with an invalid signature
+     * @notice If the `voter` is a contract, the signature is not valid using {IERC1271-isValidSignature}.
      */
     error GovernorInvalidSignature(address voter);
 
     /**
-     * @notice module:core
-     * @dev Hashing function used to (re)build the proposal id from the proposal details..
+     * @dev Hashing function used to (re)build the proposal id from the proposal details.
+     * @param targets Array of addresses that the proposal calls
+     * @param values Array of eth values to be sent with the calls
+     * @param descriptionHash Hashed description of the proposal
+     * @return uint256 The computed proposal id
      */
     function hashProposal(
         address[] memory targets,
@@ -108,10 +136,14 @@ interface IYuanDao {
     ) external returns (uint256);
 
     /**
-     * @dev Create a new proposal. Vote start after a delay specified by {IGovernor-votingDelay} and lasts for a
+     * @dev Create a new proposal.
+     * @param targets Array of addresses that the proposal calls
+     * @param values Array of eth values to be sent with the calls
+     * @param description String description of the proposal
+     * @return proposalId Unique identifier of the created proposal
+     * @notice Vote starts after a delay specified by {IGovernor-votingDelay} and lasts for a
      * duration specified by {IGovernor-votingPeriod}.
-     *
-     * Emits a {ProposalCreated} event.
+     * @notice Emits a {ProposalCreated} event.
      */
     function propose(
         address[] memory targets,
@@ -120,10 +152,14 @@ interface IYuanDao {
     ) external returns (uint256 proposalId);
 
     /**
-     * @dev Cancel a proposal. A proposal is cancellable by the proposer, but only while it is Pending state, i.e.
+     * @dev Cancel a proposal.
+     * @param targets Array of addresses that the proposal calls
+     * @param values Array of eth values to be sent with the calls
+     * @param descriptionHash Hashed description of the proposal
+     * @return proposalId Unique identifier of the canceled proposal
+     * @notice A proposal is cancellable by the proposer, but only while it is Pending state, i.e.
      * before the vote starts.
-     *
-     * Emits a {ProposalCanceled} event.
+     * @notice Emits a {ProposalCanceled} event.
      */
     function cancel(
         address[] memory targets,
@@ -133,41 +169,48 @@ interface IYuanDao {
 
     /**
      * @dev Cast a vote
-     *
-     * Emits a {VoteCast} event.
+     * @param proposalId Unique identifier of the proposal
+     * @param support The type of vote (for, against, abstain)
+     * @param weight The weight of the vote
+     * @return balance The updated balance after casting the vote
+     * @notice Emits a {VoteCast} event.
      */
     function castVote(uint256 proposalId, uint8 support, uint256 weight) external returns (uint256 balance);
 
     /**
-     * @notice module:core
      * @dev Name of the governor instance (used in building the ERC712 domain separator).
+     * @return string The name of the governor
      */
     function name() external view returns (string memory);
 
     /**
-     * @notice module:core
      * @dev Current state of a proposal, following Compound's convention
+     * @param proposalId Unique identifier of the proposal
+     * @return ProposalState The current state of the proposal
      */
     function state(uint256 proposalId) external view returns (ProposalState);
 
     /**
-     * @notice module:core
-     * @dev Timepoint used to retrieve user's votes and quorum. If using block number (as per Compound's Comp), the
-     * snapshot is performed at the end of this block. Hence, voting for this proposal starts at the beginning of the
-     * following block.
+     * @dev Timepoint used to retrieve user's votes and quorum.
+     * @param proposalId Unique identifier of the proposal
+     * @return uint256 The timepoint (block number) at which the proposal starts
+     * @notice If using block number (as per Compound's Comp), the snapshot is performed at the end of this block. 
+     * Hence, voting for this proposal starts at the beginning of the following block.
      */
     function proposalStart(uint256 proposalId) external view returns (uint256);
 
     /**
-     * @notice module:core
-     * @dev Timepoint at which votes close. If using block number, votes close at the end of this block, so it is
-     * possible to cast a vote during this block.
+     * @dev Timepoint at which votes close.
+     * @param proposalId Unique identifier of the proposal
+     * @return uint256 The timepoint (block number) at which the proposal ends
+     * @notice If using block number, votes close at the end of this block, so it is possible to cast a vote during this block.
      */
     function proposalDeadline(uint256 proposalId) external view returns (uint256);
 
     /**
-     * @notice module:core
      * @dev The account that created a proposal.
+     * @param proposalId Unique identifier of the proposal
+     * @return address The address of the proposer
      */
     function proposalProposer(uint256 proposalId) external view returns (address);
 }
