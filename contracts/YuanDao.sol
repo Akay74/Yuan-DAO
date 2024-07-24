@@ -18,6 +18,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     mapping(uint256 => ProposalCore) private _proposals;
+    uint256 private _nextProposalId;
 
     bytes32 private constant _ALL_PROPOSAL_STATES_BITMAP = bytes32((2 ** (uint8(type(ProposalState).max) + 1)) - 1);
     string private _name;
@@ -32,49 +33,11 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         DaoSettings(7200, 50400, 0)
     {
         _name = name_;
+        _nextProposalId = 1;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-
         _grantRole(PROPOSER_ROLE, msg.sender);
-
         _grantRole(EXECUTOR_ROLE, msg.sender);
-    }
-
-    // receive() external payable {}
-
-    /**
-     * @dev See {IYuanDao-hashProposal}.
-     *
-     * The proposal id is produced by hashing the ABI encoded `targets` array, the `values` array, the `calldatas` array
-     * and the descriptionHash (bytes32 which itself is the keccak256 hash of the description string). This proposal id
-     * can be produced from the proposal data which is part of the {ProposalCreated} event. It can even be computed in
-     * advance, before the proposal is submitted.
-     *
-     * Note that the chainId and the governor address are not part of the proposal id computation. Consequently, the
-     * same proposal (with same operation and same description) will have the same id if submitted on multiple governors
-     * across multiple networks. This also means that in order to execute the same operation twice (on the same
-     * governor) the proposer will have to change the description in order to avoid proposal id conflicts.
-     */
-    function hashProposal(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes32 descriptionHash
-    ) public returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, descriptionHash)));
-    }
-    
-    /**
-     * @dev Register a vote for `proposalId` by `account` with a given `support`, voting `weight` and voting `params`.
-     *
-     * Note: Support is generic and can represent various things depending on the voting system used.
-     */
-    function countVote(
-        uint256 proposalId,
-        address account,
-        uint8 support,
-        uint256 weight
-    ) public {
-        _countVote(proposalId, account, support, weight);
     }
 
     /**
@@ -86,26 +49,19 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         string memory description
     ) public onlyRole(PROPOSER_ROLE) returns (uint256) {
         address proposer = _msgSender();
-
         return _propose(targets, values, description, proposer);
     }
 
      /**
      * @dev See {IYuanDao-cancel}.
      */
-    function cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes32 descriptionHash
-    ) public returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, descriptionHash);
-
+    function cancel(uint256 proposalId) public returns (uint256) {
         _validateStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Pending));
         if (_msgSender() != proposalProposer(proposalId) && !hasRole(ADMIN_ROLE, _msgSender())) {
             revert GovernorUnauthorizedProposer(_msgSender());
         }
 
-        return _cancel(targets, values, descriptionHash);
+        return _cancel(proposalId);
     }
 
     /**
@@ -127,7 +83,6 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
      * @dev See {IYuanDao-state}.
      */
     function state(uint256 proposalId) public view returns (ProposalState) {
-        // We read the struct fields into the stack at once so Solidity emits a single SLOAD
         ProposalCore storage proposal = _proposals[proposalId];
         bool proposalExecuted = proposal.executed;
         bool proposalCanceled = proposal.canceled;
@@ -186,13 +141,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
      *
      * Emits a {IYuanDao-ProposalCanceled} event.
      */
-    function _cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes32 descriptionHash
-    ) internal returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, descriptionHash);
-
+    function _cancel(uint256 proposalId) internal returns (uint256) {
         _validateStateBitmap(
             proposalId,
             _ALL_PROPOSAL_STATES_BITMAP ^
@@ -217,13 +166,10 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         string memory description,
         address proposer
     ) internal returns (uint256 proposalId) {
-        proposalId = hashProposal(targets, values, keccak256(bytes(description)));
+        proposalId = _nextProposalId++;
 
         if (targets.length != values.length || targets.length == 0) {
             revert GovernorInvalidProposalLength(targets.length, values.length);
-        }
-        if (_proposals[proposalId].voteStart != 0) {
-            revert GovernorUnexpectedProposalState(proposalId, state(proposalId), bytes32(0));
         }
 
         uint256 snapshot = block.timestamp + votingDelay();
