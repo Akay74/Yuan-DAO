@@ -123,6 +123,18 @@ interface IYuanDao {
     error GovernorInvalidSignature(address voter);
 
     /**
+     * @dev The proposal state has been set to executed or cancelled
+     * @param proposalId Id of the proposal
+     */
+    error ProposalAlreadyExecutedOrCancelled(uint256 proposalId);
+
+    /**
+     * @dev The proposal deadline has not yet been reached
+     * @param proposalId Id of the proposal
+     */
+    error ProposalDeadlineNotReached(uint256 proposalId);
+
+    /**
      * @dev Create a new proposal.
      * @param targets Array of addresses that the proposal calls
      * @param values Array of eth values to be sent with the calls
@@ -137,6 +149,14 @@ interface IYuanDao {
         uint256[] memory values,
         string memory description
     ) external returns (uint256 proposalId);
+
+    /**
+     * @dev Execute a proposal.
+     * @param proposalId Unique identifier of the canceled proposal
+     * @notice A proposal is executable by the proposer, but only while the voting period has ended
+     * @notice Emits a {ProposalCanceled} event.
+     */
+    function execute(uint256 proposalId) external;
 
     /**
      * @dev Cancel a proposal.
