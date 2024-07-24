@@ -123,19 +123,6 @@ interface IYuanDao {
     error GovernorInvalidSignature(address voter);
 
     /**
-     * @dev Hashing function used to (re)build the proposal id from the proposal details.
-     * @param targets Array of addresses that the proposal calls
-     * @param values Array of eth values to be sent with the calls
-     * @param descriptionHash Hashed description of the proposal
-     * @return uint256 The computed proposal id
-     */
-    function hashProposal(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes32 descriptionHash
-    ) external returns (uint256);
-
-    /**
      * @dev Create a new proposal.
      * @param targets Array of addresses that the proposal calls
      * @param values Array of eth values to be sent with the calls
@@ -153,19 +140,13 @@ interface IYuanDao {
 
     /**
      * @dev Cancel a proposal.
-     * @param targets Array of addresses that the proposal calls
-     * @param values Array of eth values to be sent with the calls
-     * @param descriptionHash Hashed description of the proposal
-     * @return proposalId Unique identifier of the canceled proposal
+     * @param proposalId Unique identifier of the canceled proposal
+     * @return Unique identifier of the canceled proposal
      * @notice A proposal is cancellable by the proposer, but only while it is Pending state, i.e.
      * before the vote starts.
      * @notice Emits a {ProposalCanceled} event.
      */
-    function cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes32 descriptionHash
-    ) external returns (uint256 proposalId);
+    function cancel(uint256 proposalId) external returns (uint256);
 
     /**
      * @dev Cast a vote
