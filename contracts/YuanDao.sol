@@ -52,6 +52,17 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         return _propose(targets, values, description, proposer);
     }
 
+    /**
+     * @dev See {IYuanDao-execute}.
+     */
+    function execute(uint256 proposalId) public {
+        if (_msgSender() != proposalProposer(proposalId) && !hasRole(ADMIN_ROLE, _msgSender())) {
+            revert GovernorUnauthorizedProposer(_msgSender());
+        }
+
+        return _execute(proposalId);
+    }
+
      /**
      * @dev See {IYuanDao-cancel}.
      */
@@ -213,6 +224,27 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         emit VoteCast(account, proposalId, support, weight, reason);
 
         return weight;
+    }
+
+    /**
+     * @dev Executes a proposal if the voting period has ended and the proposal is not cancelled.
+     * Only the proposal proposer or an admin can execute the proposal.
+     * @param proposalId The ID of the proposal to execute.
+     */
+    function _execute(uint256 proposalId) internal {
+        ProposalCore storage proposal = _proposals[proposalId];
+
+        if (proposal.executed || proposal.canceled) {
+            revert ProposalAlreadyExecutedOrCancelled(proposalId);
+        }
+        
+        uint256 deadline = proposalDeadline(proposalId);
+        if (block.timestamp < deadline) {
+            revert ProposalDeadlineNotReached(proposalId);
+        }
+        proposal.executed = true;
+
+        emit ProposalExecuted(proposalId);
     }
 
     /**
