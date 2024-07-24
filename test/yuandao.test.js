@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers, upgrades } = require("hardhat");
+const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("YuanDao", function () {
@@ -12,13 +12,13 @@ describe("YuanDao", function () {
     [deployer, user1, user2] = await ethers.getSigners();
 
     const YuanDao = await ethers.getContractFactory("YuanDao");
-    yuanDao = await YuanDao.deploy("TestDAO");
+    yuanDao = await YuanDao.deploy("YuanDAO");
     await yuanDao.waitForDeployment();
   });
 
   describe("Deployment", function () {
     it("Should set the correct name", async function () {
-      expect(await yuanDao.name()).to.equal("TestDAO");
+      expect(await yuanDao.name()).to.equal("YuanDAO");
     });
 
     it("Should set the correct roles", async function () {
@@ -31,13 +31,13 @@ describe("YuanDao", function () {
   describe("Propose", function () {
     it("Should create a proposal", async function () {
       const targets = [ethers.ZeroAddress, ethers.ZeroAddress];
-      const values = [0, 1 ];
+      const values = [0, 1];
       const description = "Test proposal";
 
       await expect(yuanDao.propose(targets, values, description))
         .to.emit(yuanDao, "ProposalCreated")
         .withArgs(
-          await yuanDao.hashProposal(targets, values, ethers.id(description)),
+          1, // First proposal ID should be 1
           deployer.address,
           targets,
           values,
@@ -45,6 +45,22 @@ describe("YuanDao", function () {
           await time.latest() + 7200 + 50400,
           description
         );
+    });
+
+    it("Should create proposals with incremental IDs", async function () {
+      const targets = [ethers.ZeroAddress];
+      const values = [0];
+      const description1 = "Test proposal 1";
+      const description2 = "Test proposal 2";
+
+      await yuanDao.propose(targets, values, description1);
+      await yuanDao.propose(targets, values, description2);
+
+      const state1 = await yuanDao.state(1);
+      const state2 = await yuanDao.state(2);
+
+      expect(state1).to.not.equal(5); // Not nonexistent
+      expect(state2).to.not.equal(5); // Not nonexistent
     });
 
     it("Should revert if caller doesn't have PROPOSER_ROLE", async function () {
@@ -67,15 +83,11 @@ describe("YuanDao", function () {
       const description = "Test proposal";
 
       await yuanDao.propose(targets, values, description);
-      proposalId = await yuanDao.hashProposal(targets, values, ethers.id(description));
+      proposalId = 1; // First proposal ID
     });
 
     it("Should cancel a proposal", async function () {
-      const targets = [ethers.ZeroAddress];
-      const values = [0];
-      const descriptionHash = ethers.id("Test proposal");
-
-      await expect(yuanDao.cancel(targets, values, descriptionHash))
+      await expect(yuanDao.cancel(proposalId))
         .to.emit(yuanDao, "ProposalCanceled")
         .withArgs(proposalId);
 
@@ -83,11 +95,7 @@ describe("YuanDao", function () {
     });
 
     it("Should revert if caller is not proposer or admin", async function () {
-      const targets = [ethers.ZeroAddress];
-      const values = [0];
-      const descriptionHash = ethers.id("Test proposal");
-
-      await expect(yuanDao.connect(user1).cancel(targets, values, descriptionHash))
+      await expect(yuanDao.connect(user1).cancel(proposalId))
         .to.be.revertedWithCustomError(yuanDao, "GovernorUnauthorizedProposer")
         .withArgs(user1.address);
     });
@@ -102,7 +110,7 @@ describe("YuanDao", function () {
       const description = "Test proposal";
 
       await yuanDao.propose(targets, values, description);
-      proposalId = await yuanDao.hashProposal(targets, values, ethers.id(description));
+      proposalId = 1; // First proposal ID
 
       await time.increase(7201); // Move past voting delay
     });
@@ -139,7 +147,7 @@ describe("YuanDao", function () {
       const description = "Test proposal";
 
       await yuanDao.propose(targets, values, description);
-      proposalId = await yuanDao.hashProposal(targets, values, ethers.id(description));
+      proposalId = 1; // First proposal ID
     });
 
     it("Should return Pending state", async function () {
@@ -152,12 +160,9 @@ describe("YuanDao", function () {
     });
 
     it("Should return Canceled state", async function () {
-      const targets = [ethers.ZeroAddress];
-      const values = [0];
-      const descriptionHash = ethers.id("Test proposal");
-
-      await yuanDao.cancel(targets, values, descriptionHash);
+      await yuanDao.cancel(proposalId);
       expect(await yuanDao.state(proposalId)).to.equal(2); // Canceled state
     });
+
   });
 });
