@@ -91,6 +91,36 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
+     * @dev Returns the details of a proposal.
+     * @param proposalId The ID of the proposal to query.
+     * @return proposer The address of the proposal creator.
+     * @return voteStart The timestamp when voting starts.
+     * @return voteDuration The duration of the voting period.
+     * @return executed Whether the proposal has been executed.
+     * @return canceled Whether the proposal has been canceled.
+     */
+    function getProposalDetails(uint256 proposalId) 
+        public 
+        view 
+        returns (
+            address proposer,
+            uint48 voteStart,
+            uint32 voteDuration,
+            bool executed,
+            bool canceled
+        ) 
+    {
+        ProposalCore storage proposal = _proposals[proposalId];
+        return (
+            proposal.proposer,
+            proposal.voteStart,
+            proposal.voteDuration,
+            proposal.executed,
+            proposal.canceled
+        );
+    }
+
+    /**
      * @dev See {IYuanDao-state}.
      */
     function state(uint256 proposalId) public view returns (ProposalState) {
@@ -218,7 +248,6 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
         string memory reason 
     ) internal returns (uint256) {
         _validateStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Active));
-
         _countVote(proposalId, account, support, weight);
 
         emit VoteCast(account, proposalId, support, weight, reason);
