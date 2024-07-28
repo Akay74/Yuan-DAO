@@ -185,6 +185,26 @@ interface IYuanDao {
     function name() external view returns (string memory);
 
     /**
+     * @dev Returns the details of a proposal.
+     * @param proposalId The ID of the proposal to query.
+     * @return proposer The address of the proposal creator.
+     * @return voteStart The timestamp when voting starts.
+     * @return voteDuration The duration of the voting period.
+     * @return executed Whether the proposal has been executed.
+     * @return canceled Whether the proposal has been canceled.
+     */
+    function getProposalDetails(uint256 proposalId) 
+        external 
+        view 
+        returns (
+            address proposer,
+            uint48 voteStart,
+            uint32 voteDuration,
+            bool executed,
+            bool canceled
+        );
+
+    /**
      * @dev Current state of a proposal, following Compound's convention
      * @param proposalId Unique identifier of the proposal
      * @return ProposalState The current state of the proposal
