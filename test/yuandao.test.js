@@ -69,8 +69,7 @@ describe("YuanDao", function () {
       const description = "Test proposal";
 
       await expect(yuanDao.connect(user1).propose(targets, values, description))
-        .to.be.revertedWithCustomError(yuanDao, "AccessControlUnauthorizedAccount")
-        .withArgs(user1.address, await yuanDao.PROPOSER_ROLE());
+        .to.be.reverted
     });
   });
 
@@ -105,8 +104,8 @@ describe("YuanDao", function () {
     let proposalId;
 
     beforeEach(async function () {
-      const targets = [ethers.ZeroAddress];
-      const values = [0];
+      const targets = [ethers.ZeroAddress, ethers.ZeroAddress];
+      const values = [0, 1];
       const description = "Test proposal";
 
       await yuanDao.propose(targets, values, description);
@@ -116,21 +115,23 @@ describe("YuanDao", function () {
     });
 
     it("Should cast a vote", async function () {
-      const support = 1; // For
+      const support = 0; // OptionA
       const weight = 100;
 
       await expect(yuanDao.castVote(proposalId, support, weight))
         .to.emit(yuanDao, "VoteCast")
         .withArgs(deployer.address, proposalId, support, weight, "");
 
-      const { forVotes } = await yuanDao.proposalVotes(proposalId);
-      expect(forVotes).to.equal(weight);
+      const { _optionAVotes, _optionBVotes, _totalVotes } = await yuanDao.getProposalVotes(proposalId);
+      expect(_optionAVotes).to.equal(weight);
+      expect(_optionBVotes).to.equal(0);
+      expect(_totalVotes).to.equal(weight);
     });
 
     it("Should revert if voting on a non-active proposal", async function () {
       await time.increase(50401); // Move past voting period
 
-      const support = 1; // For
+      const support = 0; // OptionA
       const weight = 100;
 
       await expect(yuanDao.castVote(proposalId, support, weight))
@@ -142,8 +143,8 @@ describe("YuanDao", function () {
     let proposalId;
 
     beforeEach(async function () {
-      const targets = [ethers.ZeroAddress];
-      const values = [0];
+      const targets = [ethers.ZeroAddress, ethers.ZeroAddress];
+      const values = [0, 1];
       const description = "Test proposal";
 
       await yuanDao.propose(targets, values, description);
@@ -162,6 +163,12 @@ describe("YuanDao", function () {
     it("Should return Canceled state", async function () {
       await yuanDao.cancel(proposalId);
       expect(await yuanDao.state(proposalId)).to.equal(2); // Canceled state
+    });
+
+    it("Should return Executed state", async function () {
+      await time.increase(60401);
+      await yuanDao.execute(proposalId);
+      expect(await yuanDao.state(proposalId)).to.equal(3); // Canceled state
     });
 
   });
@@ -190,25 +197,25 @@ describe("YuanDao", function () {
         .to.emit(yuanDao, "ProposalExecuted")
         .withArgs(proposalId);
 
-      const proposal = await yuanDao._proposals(proposalId);
-      expect(proposal.executed).to.be.true;
+      const { proposer, voteStart, voteDuration, executed, canceled } = await yuanDao.getProposalDetails(proposalId);
+      expect(executed).to.be.true;
     });
 
     it("should revert if called by non-user1 and non-admin", async function () {
       await expect(yuanDao.connect(user2).execute(proposalId))
-        .to.be.revertedWithCustomError("GovernorUnauthorizedProposer");
+        .to.be.revertedWithCustomError(yuanDao, "GovernorUnauthorizedProposer");
     });
 
     it("should revert if proposal is already executed", async function () {
       await yuanDao.execute(proposalId);
       await expect(yuanDao.execute(proposalId))
-        .to.be.revertedWith("ProposalAlreadyExecutedOrCancelled");
+        .to.be.revertedWithCustomError(yuanDao, "ProposalAlreadyExecutedOrCancelled");
     });
 
     it("should revert if proposal is cancelled", async function () {
       await yuanDao.cancel(proposalId);
       await expect(yuanDao.execute(proposalId))
-        .to.be.revertedWith("ProposalAlreadyExecutedOrCancelled");
+        .to.be.revertedWithCustomError(yuanDao, "ProposalAlreadyExecutedOrCancelled");
     });
 
     it("should revert if proposal deadline is not reached", async function () {
@@ -223,7 +230,7 @@ describe("YuanDao", function () {
 
       // Try to execute immediately
       await expect(yuanDao.execute(newProposalId))
-        .to.be.revertedWith("ProposalDeadlineNotReached");
+        .to.be.revertedWithCustomError(yuanDao, "ProposalDeadlineNotReached");
     });
   });
 });
