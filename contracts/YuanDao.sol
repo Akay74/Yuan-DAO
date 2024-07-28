@@ -91,13 +91,7 @@ contract YuanDao is IYuanDao, DaoSettings, VotesCounter {
     }
 
     /**
-     * @dev Returns the details of a proposal.
-     * @param proposalId The ID of the proposal to query.
-     * @return proposer The address of the proposal creator.
-     * @return voteStart The timestamp when voting starts.
-     * @return voteDuration The duration of the voting period.
-     * @return executed Whether the proposal has been executed.
-     * @return canceled Whether the proposal has been canceled.
+     * @dev See {IYuanDao-getProposalDetails}.
      */
     function getProposalDetails(uint256 proposalId) 
         public 
