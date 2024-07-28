@@ -28,6 +28,8 @@ contract VotesCounter is IVotesCounter {
         uint256 proposalId
     ) public view returns (uint256 _optionAVotes, uint256 _optionBVotes, uint256 _totalVotes) {
         ProposalVote storage proposalVote = proposalVotes[proposalId];
+        _optionAVotes = proposalVote.optionAVotes;
+        _optionBVotes = proposalVote.optionBVotes;
 
         _totalVotes = proposalVote.optionAVotes + proposalVote.optionBVotes;
         return (proposalVote.optionAVotes, proposalVote.optionBVotes, _totalVotes);
