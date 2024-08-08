@@ -168,7 +168,7 @@ describe("YuanDao", function () {
     it("Should return Executed state", async function () {
       await time.increase(60401);
       await yuanDao.execute(proposalId);
-      expect(await yuanDao.state(proposalId)).to.equal(3); // Canceled state
+      expect(await yuanDao.state(proposalId)).to.equal(3); // Executed state
     });
 
   });
