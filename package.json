@@ -1,5 +1,7 @@
 {
   "name": "yuan-dao",
+  "description": "Yuan DAO's Protocol",
+  "version": "1.0.0",
   "scripts": {
     "test": "npx hardhat test",
     "test:coverage": "npx hardhat coverage",
