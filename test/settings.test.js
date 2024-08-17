@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("DaoSettings", () => {
+  let DaoSettings;
   let daoSettings;
   let owner;
   let admin;
@@ -12,7 +13,7 @@ describe("DaoSettings", () => {
   beforeEach(async () => {
     [owner, admin, nonAdmin] = await ethers.getSigners();
 
-    const DaoSettings = await ethers.getContractFactory("DaoSettings");
+    DaoSettings = await ethers.getContractFactory("DaoSettings");
     daoSettings = await DaoSettings.deploy(10, 100, 1000);
     await daoSettings.waitForDeployment();
 
@@ -61,7 +62,7 @@ describe("DaoSettings", () => {
     it("should not allow a voting period of 0", async () => {
       await expect(
         daoSettings.connect(admin).setVotingPeriod(0)
-      ).to.be.revertedWithCustomError(daoSettings, "GovernorInvalidVotingPeriod(0)");
+      ).to.be.revertedWithCustomError(daoSettings, "GovernorInvalidVotingPeriod");
     });
   });
 
