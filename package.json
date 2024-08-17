@@ -1,6 +1,6 @@
 {
-  "name": "nft-marketplace-smart-contract",
-  "description": "NFT Marketplace's Protocol",
+  "name": "hardhat-project",
+  "description": "Yuan DAO's Protocol",
   "version": "1.0.0",
   "directories": {
     "test": "test"
