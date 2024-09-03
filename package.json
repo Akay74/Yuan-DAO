@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project",
+  "name": "yuan-dao",
   "description": "Yuan DAO's Protocol",
   "version": "1.0.0",
   "directories": {
@@ -20,8 +20,7 @@
     "lint:fix": "npm run lint:js-fix && npm run lint:sol-fix",
     "prepare": "husky install"
   },
-  "author": "Polytrade",
-  "license": "MIT",
+  "author": "Akay",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.1",
     "@nomicfoundation/hardhat-ethers": "^3.0.4",
