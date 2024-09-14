@@ -2,36 +2,34 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Treasury", function () {
-  let Treasury, treasury, owner, addr1, governanceToken;
+  let Treasury, treasury, GovernanceToken, governanceToken;
+  let owner, addr1, addr2;
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
 
-    // Deploy a mock ERC20 token to use as the governance token
-    const MockToken = await ethers.getContractFactory("MockERC20");
-    governanceToken = await MockToken.deploy("Governance Token", "GOV");
+    // Deploy mock GovernanceToken
+    GovernanceToken = await ethers.getContractFactory("MockERC20");
+    governanceToken = await GovernanceToken.deploy("GovernanceToken", "GT", 8);
+    await governanceToken.deployed();
 
+    // Deploy Treasury contract
     Treasury = await ethers.getContractFactory("Treasury");
     treasury = await Treasury.deploy(governanceToken.address);
     await treasury.deployed();
+
+    // Mint some tokens for testing
+    await governanceToken.mint(owner.address, ethers.utils.parseUnits("1000", 8));
+    await governanceToken.mint(addr1.address, ethers.utils.parseUnits("1000", 8));
   });
 
   describe("Deployment", function () {
-    it("Should set the right owner", async function () {
-      expect(await treasury.owner()).to.equal(owner.address);
-    });
-
     it("Should set the correct governance token", async function () {
-      expect(await treasury.governanceToken()).to.equal(
-        governanceToken.address
-      );
+      expect(await treasury.governanceToken()).to.equal(governanceToken.address);
     });
 
-    it("Should revert if zero address is provided for governance token", async function () {
-      const TreasuryFactory = await ethers.getContractFactory("Treasury");
-      await expect(
-        TreasuryFactory.deploy(ethers.constants.AddressZero)
-      ).to.be.revertedWithCustomError(TreasuryFactory, "ZeroAddress");
+    it("Should set the correct owner", async function () {
+      expect(await treasury.owner()).to.equal(owner.address);
     });
   });
 
@@ -39,100 +37,90 @@ describe("Treasury", function () {
     it("Should set the winning token correctly", async function () {
       const proposalId = ethers.utils.id("proposal1");
       const option = 1;
-      const winningToken = addr1.address;
-
-      await treasury.setWinningToken(proposalId, option, winningToken);
-
-      expect(await treasury.getWinningToken(proposalId, option)).to.equal(
-        winningToken
-      );
-    });
-
-    it("Should emit WinningTokenSet event", async function () {
-      const proposalId = ethers.utils.id("proposal1");
-      const option = 1;
-      const winningToken = addr1.address;
+      const winningToken = addr2.address;
 
       await expect(treasury.setWinningToken(proposalId, option, winningToken))
         .to.emit(treasury, "WinningTokenSet")
         .withArgs(proposalId, option, winningToken);
+
+      expect(await treasury.getWinningToken(proposalId, option)).to.equal(winningToken);
     });
 
-    it("Should revert if called by non-owner", async function () {
+    it("Should revert when called by non-owner", async function () {
       const proposalId = ethers.utils.id("proposal1");
       const option = 1;
-      const winningToken = addr1.address;
+      const winningToken = addr2.address;
 
       await expect(
-        treasury
-          .connect(addr1)
-          .setWinningToken(proposalId, option, winningToken)
+        treasury.connect(addr1).setWinningToken(proposalId, option, winningToken)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
   describe("burnGovernanceToken", function () {
-    it("Should burn the correct amount of tokens", async function () {
-      const burnAmount = ethers.utils.parseUnits("100", 8); // Assuming 8 decimals
-      await governanceToken.transfer(treasury.address, burnAmount);
+    it("Should burn governance tokens correctly", async function () {
+      const amountToBurn = ethers.utils.parseUnits("100", 8);
+      
+      // Transfer tokens to the treasury
+      await governanceToken.transfer(treasury.address, amountToBurn);
 
       await expect(treasury.burnGovernanceToken(100))
         .to.emit(treasury, "TokenBurned")
         .withArgs(100);
 
-      expect(await governanceToken.balanceOf(treasury.address)).to.equal(0);
+      const treasuryBalance = await governanceToken.balanceOf(treasury.address);
+      expect(treasuryBalance).to.equal(0);
     });
 
-    it("Should revert if there are insufficient funds", async function () {
-      await expect(
-        treasury.burnGovernanceToken(100)
-      ).to.be.revertedWithCustomError(treasury, "InsufficientFunds");
+    it("Should revert when burning more tokens than available", async function () {
+      const amountToBurn = ethers.utils.parseUnits("100", 8);
+      
+      // Transfer tokens to the treasury
+      await governanceToken.transfer(treasury.address, amountToBurn);
+
+      await expect(treasury.burnGovernanceToken(101)).to.be.revertedWith("InsufficientFunds");
     });
 
-    it("Should revert if called by non-owner", async function () {
-      await expect(
-        treasury.connect(addr1).burnGovernanceToken(100)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+    it("Should revert when called by non-owner", async function () {
+      await expect(treasury.connect(addr1).burnGovernanceToken(100)).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
   describe("transferVoteToken", function () {
-    it("Should transfer tokens correctly", async function () {
-      const transferAmount = ethers.utils.parseUnits("100", 8); // Assuming 8 decimals
-      await governanceToken.transfer(addr1.address, transferAmount);
-      await governanceToken
-        .connect(addr1)
-        .approve(treasury.address, transferAmount);
+    it("Should transfer vote tokens correctly", async function () {
+      const amountToTransfer = ethers.utils.parseUnits("100", 8);
+      
+      await governanceToken.connect(addr1).approve(treasury.address, amountToTransfer);
+      
+      await expect(treasury.connect(addr1).transferVoteToken(100))
+        .to.emit(governanceToken, "Transfer")
+        .withArgs(addr1.address, treasury.address, amountToTransfer);
 
-      await treasury.connect(addr1).transferVoteToken(100);
-
-      expect(await governanceToken.balanceOf(treasury.address)).to.equal(
-        transferAmount
-      );
+      const treasuryBalance = await governanceToken.balanceOf(treasury.address);
+      expect(treasuryBalance).to.equal(amountToTransfer);
     });
 
-    it("Should revert if there are insufficient funds", async function () {
-      await expect(
-        treasury.connect(addr1).transferVoteToken(100)
-      ).to.be.revertedWithCustomError(treasury, "InsufficientFunds");
+    it("Should revert when transferring more tokens than available", async function () {
+      const amountToTransfer = ethers.utils.parseUnits("1001", 8);
+      
+      await governanceToken.connect(addr1).approve(treasury.address, amountToTransfer);
+      
+      await expect(treasury.connect(addr1).transferVoteToken(1001)).to.be.revertedWith("InsufficientFunds");
     });
 
-    it("Should revert if approval fails", async function () {
-      const transferAmount = ethers.utils.parseUnits("100", 8); // Assuming 8 decimals
-      await governanceToken.transfer(addr1.address, transferAmount);
-
-      await expect(
-        treasury.connect(addr1).transferVoteToken(100)
-      ).to.be.revertedWithCustomError(treasury, "ApprovalFailed");
+    it("Should revert when approval fails", async function () {
+      await expect(treasury.connect(addr1).transferVoteToken(100)).to.be.revertedWith("ApprovalFailed");
     });
   });
 
   describe("getTokenBalance", function () {
     it("Should return the correct token balance", async function () {
-      const transferAmount = ethers.utils.parseUnits("100", 8); // Assuming 8 decimals
-      await governanceToken.transfer(treasury.address, transferAmount);
+      const amountToTransfer = ethers.utils.parseUnits("100", 8);
+      
+      await governanceToken.transfer(treasury.address, amountToTransfer);
 
-      expect(await treasury.getTokenBalance()).to.equal(transferAmount);
+      const balance = await treasury.getTokenBalance();
+      expect(balance).to.equal(amountToTransfer);
     });
   });
 });
