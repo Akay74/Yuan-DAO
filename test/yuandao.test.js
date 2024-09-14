@@ -50,7 +50,7 @@ describe("YuanDao", function () {
           deployer.address,
           targets,
           values,
-          (await time.latest()) + 7200,
+          (await time.latest()) + 7201,
           (await time.latest()) + 7200 + 50400,
           description
         );
