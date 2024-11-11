@@ -17,6 +17,8 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
 
     address public governanceToken;
     uint8 private _decimals;
+    // Dead address for burning tokens
+    address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     mapping(bytes32 => mapping(uint256 => address)) private _proposalWinner;
 
