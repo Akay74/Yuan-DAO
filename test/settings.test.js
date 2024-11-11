@@ -8,7 +8,8 @@ describe("DaoSettings", () => {
   let admin;
   let nonAdmin;
 
-  const ADMIN_ROLE = "0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775";
+  const ADMIN_ROLE =
+    "0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775";
 
   beforeEach(async () => {
     [owner, admin, nonAdmin] = await ethers.getSigners();
@@ -62,7 +63,10 @@ describe("DaoSettings", () => {
     it("should not allow a voting period of 0", async () => {
       await expect(
         daoSettings.connect(admin).setVotingPeriod(0)
-      ).to.be.revertedWithCustomError(daoSettings, "GovernorInvalidVotingPeriod");
+      ).to.be.revertedWithCustomError(
+        daoSettings,
+        "GovernorInvalidVotingPeriod"
+      );
     });
   });
 
