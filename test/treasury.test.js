@@ -58,42 +58,50 @@ describe("Treasury", function () {
   });
 
   describe("burnGovernanceToken", function () {
-    it("Should burn governance tokens correctly", async function () {
-      // Amount without decimals - the contract will handle the scaling
-      const rawAmount = 100;
-      // Amount with decimals - for the transfer
-      const scaledAmount = ethers.parseUnits("100", 8);
-     
-      // Transfer tokens to the treasury (using scaled amount)
-      await governanceToken.transfer(await treasury.getAddress(), scaledAmount);
-      
-      const initialBalance = await governanceToken.balanceOf(await treasury.getAddress());
-      expect(initialBalance).to.equal(scaledAmount);
-     
-      // Call burnGovernanceToken with RAW amount (contract will scale it)
-      await expect(treasury.burnGovernanceToken(rawAmount))
-        .to.emit(treasury, "TokenBurned")
-        .withArgs(scaledAmount);  // Event should emit the scaled amount
+    const DEAD_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+    
+    it("Should burn governance tokens correctly by sending to dead address", async function () {
+        // Amount without decimals
+        const rawAmount = 100;
+        // Amount with decimals
+        const scaledAmount = ethers.parseUnits("100", 8);
+        
+        // Transfer tokens to the treasury
+        await governanceToken.transfer(await treasury.getAddress(), scaledAmount);
+        
+        const initialBalance = await governanceToken.balanceOf(await treasury.getAddress());
+        const initialDeadBalance = await governanceToken.balanceOf(DEAD_ADDRESS);
+        expect(initialBalance).to.equal(scaledAmount);
+        
+        // "Burn" the tokens (transfer to dead address)
+        await expect(treasury.burnGovernanceToken(rawAmount))
+            .to.emit(treasury, "TokenBurned")
+            .withArgs(scaledAmount);
 
-      const treasuryBalance = await governanceToken.balanceOf(await treasury.getAddress());
-      expect(treasuryBalance).to.equal(0);
+        // Check treasury balance is 0
+        const finalTreasuryBalance = await governanceToken.balanceOf(await treasury.getAddress());
+        expect(finalTreasuryBalance).to.equal(0);
+        
+        // Check dead address received the tokens
+        const finalDeadBalance = await governanceToken.balanceOf(DEAD_ADDRESS);
+        expect(finalDeadBalance).to.equal(initialDeadBalance + scaledAmount);
     });
 
     it("Should revert when burning more tokens than available", async function () {
-      const rawAmount = 100;
-      const scaledAmount = ethers.parseUnits("100", 8);
-      
-      // Transfer tokens to the treasury
-      await governanceToken.transfer(await treasury.getAddress(), scaledAmount);
+        const rawAmount = 100;
+        const scaledAmount = ethers.parseUnits("100", 8);
+        
+        // Transfer tokens to the treasury
+        await governanceToken.transfer(await treasury.getAddress(), scaledAmount);
 
-      // Try to burn more than available (in raw amount)
-      await expect(treasury.burnGovernanceToken(101))
-        .to.be.revertedWithCustomError(treasury, "InsufficientFunds");
+        // Try to burn more than available
+        await expect(treasury.burnGovernanceToken(rawAmount + 1))
+            .to.be.revertedWithCustomError(treasury, "InsufficientFunds");
     });
 
     it("Should revert when called by non-owner", async function () {
-      await expect(treasury.connect(addr1).burnGovernanceToken(100))
-        .to.be.revertedWith("Ownable: caller is not the owner");
+        await expect(treasury.connect(addr1).burnGovernanceToken(100))
+            .to.be.revertedWith("Ownable: caller is not the owner");
     });
 });
 
