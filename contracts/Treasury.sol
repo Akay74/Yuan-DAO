@@ -105,7 +105,7 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
     }
 
     /**
-     * @dev Burns a specified amount of governance tokens from this contract.
+     * @dev Burns a specified amount of governance tokens by sending them to a dead address.
      * @param amount The amount of tokens to burn (in token units, not wei).
      *
      * Requirements:
@@ -118,13 +118,8 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
         uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(address(this));
         if (governanceTokenBalance < amountToBurn) revert InsufficientFunds();
 
-        // Try to use the burn function if it exists
-        try IERC20Burnable(governanceToken).burn(amountToBurn) {
-            // Burning successful
-        } catch {
-            // If burn function doesn't exist or fails, transfer to zero address
-            IERC20(governanceToken).transfer(address(0), amountToBurn);
-        }
+        // Use safeTransfer to send tokens to dead address
+        IERC20(governanceToken).safeTransfer(DEAD_ADDRESS, amountToBurn);
 
         emit TokenBurned(amountToBurn);
     }
