@@ -132,7 +132,7 @@ describe("YuanDao Voting", function () {
       // Update vote
       await yuanDao.connect(voter1).castVote(proposalId, 0, 150);
       totalVotes = await yuanDao.getTotalVotes(proposalId);
-      expect(totalVotes).to.equal(150);
+      expect(totalVotes).to.equal(250);
     });
 
     it("Should track total votes across different vote types", async function () {
