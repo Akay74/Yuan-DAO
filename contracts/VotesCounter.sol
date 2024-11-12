@@ -22,6 +22,15 @@ contract VotesCounter is IVotesCounter {
     mapping(uint256 => ProposalVote) public proposalVotes;
 
     /**
+     * @dev External function to get the total votes for a proposal
+     * @param proposalId The ID of the proposal to check
+     * @return totalVotes The total number of votes cast for the proposal
+     */
+    function getTotalVotes(uint256 proposalId) external view returns (uint256) {
+        return _voteFinalized(proposalId);
+    }
+
+    /**
      * @dev Accessor to the internal vote counts.
      */
     function getProposalVotes(
@@ -71,7 +80,7 @@ contract VotesCounter is IVotesCounter {
     }
 
     /**
-     * @dev See {Governor-_voteSucceeded}. In this module, the optionBVotes must be strictly over the optionAVotes.
+     * @dev Internal function to get total votes for a proposal
      */
     function _voteFinalized(
         uint256 proposalId
