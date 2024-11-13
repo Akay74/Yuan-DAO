@@ -80,6 +80,13 @@ describe("YuanDao", function () {
       await expect(yuanDao.connect(user1).propose(targets, values, description))
         .to.be.reverted;
     });
+
+    it("Should revert when querying state of non-existent proposal", async function () {
+      const nonExistentProposalId = 999;
+      await expect(yuanDao.state(nonExistentProposalId))
+        .to.be.revertedWithCustomError(yuanDao, "GovernorNonexistentProposal")
+        .withArgs(nonExistentProposalId);
+    });
   });
 
   describe("Cancel", function () {
@@ -180,9 +187,35 @@ describe("YuanDao", function () {
     });
 
     it("Should return Executed state", async function () {
-      await time.increase(60401);
+      await time.increase(60401); // Move past voting period
       await yuanDao.execute(proposalId);
       expect(await yuanDao.state(proposalId)).to.equal(3); // Executed state
+    });
+
+    // New test to cover all state transitions
+    it("Should handle all state transitions correctly", async function () {
+      // Check initial state
+      expect(await yuanDao.state(proposalId)).to.equal(0); // Pending
+
+      // Move to active state
+      await time.increase(7201);
+      expect(await yuanDao.state(proposalId)).to.equal(1); // Active
+
+      // Create another proposal to test cancellation
+      const targets = [ethers.ZeroAddress];
+      const values = [0];
+      const description = "Test proposal 2";
+      await yuanDao.propose(targets, values, description);
+      const proposalId2 = 2;
+
+      // Cancel second proposal
+      await yuanDao.cancel(proposalId2);
+      expect(await yuanDao.state(proposalId2)).to.equal(2); // Canceled
+
+      // Execute first proposal
+      await time.increase(50401); // Move past voting period
+      await yuanDao.execute(proposalId);
+      expect(await yuanDao.state(proposalId)).to.equal(3); // Executed
     });
   });
 
@@ -190,7 +223,6 @@ describe("YuanDao", function () {
     let proposalId;
 
     beforeEach(async function () {
-      // Create a proposal
       const tx = await yuanDao.propose(
         [ethers.ZeroAddress, ethers.ZeroAddress],
         [1, 2],
@@ -199,7 +231,6 @@ describe("YuanDao", function () {
       const receipt = await tx.wait();
       proposalId = 1;
 
-      // Fast forward time to after voting period
       const votingPeriod = await yuanDao.votingPeriod();
       await ethers.provider.send("evm_increaseTime", [
         Number(votingPeriod) + 7201,
@@ -240,7 +271,6 @@ describe("YuanDao", function () {
     });
 
     it("should revert if proposal deadline is not reached", async function () {
-      // Create a new proposal
       const tx = await yuanDao.propose(
         [ethers.ZeroAddress, ethers.ZeroAddress],
         [1, 2],
@@ -249,7 +279,6 @@ describe("YuanDao", function () {
       const receipt = await tx.wait();
       const newProposalId = 2;
 
-      // Try to execute immediately
       await expect(
         yuanDao.execute(newProposalId)
       ).to.be.revertedWithCustomError(yuanDao, "ProposalDeadlineNotReached");
