@@ -18,7 +18,8 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
     address public governanceToken;
     uint8 private _decimals;
     // Dead address for burning tokens
-    address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address private constant _DEAD_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
 
     mapping(bytes32 => mapping(uint256 => address)) private _proposalWinner;
 
@@ -81,7 +82,7 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
         uint256 senderBalance = IERC20(governanceToken).balanceOf(msg.sender);
 
         if (senderBalance < amountToTransfer) revert InsufficientFunds();
-        
+
         IERC20(governanceToken).safeTransferFrom(
             msg.sender,
             address(this),
@@ -115,11 +116,13 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
      */
     function _burn(uint256 amount) internal {
         uint256 amountToBurn = amount * (10 ** _decimals);
-        uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(address(this));
+        uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(
+            address(this)
+        );
         if (governanceTokenBalance < amountToBurn) revert InsufficientFunds();
 
         // Use safeTransfer to send tokens to dead address
-        IERC20(governanceToken).safeTransfer(DEAD_ADDRESS, amountToBurn);
+        IERC20(governanceToken).safeTransfer(_DEAD_ADDRESS, amountToBurn);
 
         emit TokenBurned(amountToBurn);
     }
