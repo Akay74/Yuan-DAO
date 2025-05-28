@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import { ITreasury } from "./interfaces/ITreasury.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { VotesCounter } from "./VotesCounter.sol";
 
@@ -18,7 +18,8 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
     address public governanceToken;
     uint8 private _decimals;
     // Dead address for burning tokens
-    address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address private constant _DEAD_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
 
     mapping(bytes32 => mapping(uint256 => address)) private _proposalWinner;
 
@@ -81,7 +82,7 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
         uint256 senderBalance = IERC20(governanceToken).balanceOf(msg.sender);
 
         if (senderBalance < amountToTransfer) revert InsufficientFunds();
-        
+
         IERC20(governanceToken).safeTransferFrom(
             msg.sender,
             address(this),
@@ -115,11 +116,13 @@ contract Treasury is ITreasury, Ownable, VotesCounter {
      */
     function _burn(uint256 amount) internal {
         uint256 amountToBurn = amount * (10 ** _decimals);
-        uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(address(this));
+        uint256 governanceTokenBalance = IERC20(governanceToken).balanceOf(
+            address(this)
+        );
         if (governanceTokenBalance < amountToBurn) revert InsufficientFunds();
 
         // Use safeTransfer to send tokens to dead address
-        IERC20(governanceToken).safeTransfer(DEAD_ADDRESS, amountToBurn);
+        IERC20(governanceToken).safeTransfer(_DEAD_ADDRESS, amountToBurn);
 
         emit TokenBurned(amountToBurn);
     }
