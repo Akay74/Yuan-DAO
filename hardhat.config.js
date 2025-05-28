@@ -28,11 +28,6 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      forking: {
-        url: process.env.RPC_URL || "https://rpc.ankr.com/eth",
-        ignoreUnknownTxType: true,
-        blockNumber: 18314577,
-      },
       chainId: Number(process.env.CHAIN_ID) || 1,
       accounts: {
         mnemonic:
